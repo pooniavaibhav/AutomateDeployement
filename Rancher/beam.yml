@@ -1,0 +1,73 @@
+apiVersion: extensions/v1beta1
+kind: Deployment                                          
+metadata:
+  name: beam
+  namespace: beam
+spec:
+  replicas: 1                                             
+  minReadySeconds: 15
+  strategy:
+    type: RollingUpdate                                   
+    rollingUpdate: 
+      maxUnavailable: 1                                   
+      maxSurge: 1                                         
+  template:                                               
+    metadata:
+      labels:
+        app: beam                             
+    spec:
+      containers:
+      - env:
+        - name: BASEURL
+          value: http://dn.crmnext.com/datanextapi
+        - name: CREATESCHEMASERVICE
+          value: /datanext/dataset/createschema
+        - name: DATACOUNTSERVICE
+          value: /datanext/Flows/SaveFlowCount
+        - name: DATAHUBREADSERVICE
+          value: /datanext/datasource/Getdata?ownerId=%s
+        - name: DATASETREADSERVICE
+          value: /datanext/dataset/readdataset?ownerId=%s&pageIndex=1&pageCount=0&datasetInstanceId=%s
+        - name: DATAWRITESERVICE
+          value: /datanext/dataset/AddData
+        - name: RUNNINGIDSERVICE
+          value: /datanext/scheduler/updateNumber?ownerId=%s&flowId=%s&flowVersion=%s
+        image: 192.168.0.169:30500/datanext:beamV1.2
+        imagePullPolicy: Always
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - echo '192.168.0.5 dn.crmnext.com' >> /etc/hosts
+        name: beam
+        ports:
+        - containerPort: 3093
+          name: 3093tcp307701
+          protocol: TCP
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {}
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+        stdin: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        tty: true
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+      - name: beam
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: cattle.io/os
+        operator: Equal
+        value: linux
+
+
